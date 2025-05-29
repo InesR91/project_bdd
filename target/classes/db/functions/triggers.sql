@@ -16,18 +16,21 @@ DROP FUNCTION IF EXISTS check_ingredients_disponibilite() CASCADE;
 CREATE OR REPLACE FUNCTION update_livreur_disponibilite()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Si une nouvelle commande est créée, marquer le livreur comme non disponible
+    -- Si une nouvelle commande est créée
     IF (TG_OP = 'INSERT') THEN
+        -- Vérifier si le livreur est disponible
+        IF NOT EXISTS (SELECT 1 FROM Livreur WHERE id_livreur = NEW.id_livreur AND disponible = TRUE) THEN
+            RAISE EXCEPTION 'Le livreur n''est pas disponible';
+        END IF;
+        -- Marquer le livreur comme non disponible
         UPDATE Livreur SET disponible = FALSE 
         WHERE id_livreur = NEW.id_livreur;
-        
-    -- Si une commande est mise à jour
+    
+    -- Si une commande est terminée
     ELSIF (TG_OP = 'UPDATE') THEN
-        -- Si le nouveau statut est 'livré', rendre le livreur disponible
-        IF NEW.statut = 'livré' THEN
-            UPDATE Livreur SET disponible = TRUE
-            WHERE id_livreur = NEW.id_livreur;
-        END IF;
+        -- Rendre le livreur disponible sans condition
+        UPDATE Livreur SET disponible = TRUE
+        WHERE id_livreur = NEW.id_livreur;
     END IF;
     
     RETURN NEW;

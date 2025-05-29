@@ -189,8 +189,19 @@ public class CommandeDAO {
             conn = DatabaseConnection.getConnection();
             conn.setAutoCommit(false);
 
-            // Si on assigne un livreur
-            if (commande.getIdLivreur() != null && commande.getIdLivreur() > 0) {
+            // Récupérer l'ancien statut
+            String ancienStatut = null;
+            try (PreparedStatement pstmt = conn.prepareStatement("SELECT statut FROM Vente WHERE id_vente = ?")) {
+                pstmt.setInt(1, commande.getId());
+                ResultSet rs = pstmt.executeQuery();
+                if (rs.next()) {
+                    ancienStatut = rs.getString("statut");
+                }
+            }
+
+            // Si on assigne un livreur pour la première fois (passage de en_attente à en_cours)
+            if (commande.getIdLivreur() != null && commande.getIdLivreur() > 0 
+                && "en_attente".equals(ancienStatut) && "en_cours".equals(commande.getStatut())) {
                 // Vérifier si le livreur est disponible
                 try (PreparedStatement checkLivreur = conn.prepareStatement(
                         "SELECT disponible FROM Livreur WHERE id_livreur = ?")) {
@@ -208,83 +219,24 @@ public class CommandeDAO {
                 }
                 commande.setIdVehicule(vehiculeId);
 
-                // Mettre à jour le statut du livreur
-                try (PreparedStatement updateLivreur = conn.prepareStatement(
-                        "UPDATE Livreur SET disponible = false WHERE id_livreur = ?")) {
-                    updateLivreur.setInt(1, commande.getIdLivreur());
-                    updateLivreur.executeUpdate();
-                }
-
                 // Mettre à jour le statut du véhicule
                 try (PreparedStatement updateVehicule = conn.prepareStatement(
                         "UPDATE Vehicule SET disponible = false WHERE id_vehicule = ?")) {
                     updateVehicule.setInt(1, vehiculeId);
                     updateVehicule.executeUpdate();
                 }
-
-                // Mettre à jour le statut de la commande
-                commande.setStatut("en_cours");
-            }
-
-            // Si la commande est marquée comme livrée
-            if ("livree".equals(commande.getStatut())) {
-                // Libérer le livreur et le véhicule
-                if (commande.getIdLivreur() != null) {
-                    try (PreparedStatement updateLivreur = conn.prepareStatement(
-                            "UPDATE Livreur SET disponible = true WHERE id_livreur = ?")) {
-                        updateLivreur.setInt(1, commande.getIdLivreur());
-                        updateLivreur.executeUpdate();
-                    }
-                }
-
-                if (commande.getIdVehicule() != null) {
-                    try (PreparedStatement updateVehicule = conn.prepareStatement(
-                            "UPDATE Vehicule SET disponible = true WHERE id_vehicule = ?")) {
-                        updateVehicule.setInt(1, commande.getIdVehicule());
-                        updateVehicule.executeUpdate();
-                    }
-                }
-
-                // Mettre à jour les statistiques du client
-                try (PreparedStatement updateClient = conn.prepareStatement("""
-                        UPDATE Client 
-                        SET nb_pizzas_achetees = nb_pizzas_achetees + 1,
-                            solde_compte = solde_compte - ?
-                        WHERE id_client = ?
-                    """)) {
-                    updateClient.setBigDecimal(1, commande.getMontantFinal());
-                    updateClient.setInt(2, commande.getIdClient());
-                    updateClient.executeUpdate();
-                }
             }
 
             // Mettre à jour la commande
             try (PreparedStatement pstmt = conn.prepareStatement(UPDATE_COMMANDE)) {
-                if (commande.getIdLivreur() != null) {
-                    pstmt.setInt(1, commande.getIdLivreur());
-                } else {
-                    pstmt.setNull(1, Types.INTEGER);
-                }
-                
-                if (commande.getIdVehicule() != null) {
-                    pstmt.setInt(2, commande.getIdVehicule());
-                } else {
-                    pstmt.setNull(2, Types.INTEGER);
-                }
-                
+                pstmt.setObject(1, commande.getIdLivreur());
+                pstmt.setObject(2, commande.getIdVehicule());
                 pstmt.setString(3, commande.getStatut());
-                
-                if ("livree".equals(commande.getStatut())) {
-                    pstmt.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
-                } else {
-                    pstmt.setNull(4, Types.TIMESTAMP);
-                }
-                
+                pstmt.setTimestamp(4, commande.getDateLivraison());
                 pstmt.setInt(5, commande.getId());
-                
                 pstmt.executeUpdate();
             }
-            
+
             conn.commit();
         } catch (SQLException e) {
             if (conn != null) {
@@ -294,7 +246,7 @@ public class CommandeDAO {
                     throw new SQLException("Erreur lors du rollback: " + ex.getMessage(), ex);
                 }
             }
-            throw new SQLException("Erreur lors de la mise à jour de la commande: " + e.getMessage(), e);
+            throw e;
         } finally {
             if (conn != null) {
                 try {
