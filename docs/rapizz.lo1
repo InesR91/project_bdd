@@ -1,0 +1,31 @@
+MCD
+CLIENT: id_client, nom, prenom, adresse, telephone, solde_compte, nb_pizzas_achetees
+PIZZA: id_pizza, nom, prix_base, nb_commandes
+INGREDIENT: id_ingredient, nom, stock, nb_utilisations
+LIVREUR: id_livreur, nom, prenom, telephone, nombre_retards
+VEHICULE: id_vehicule, type_vehicule, immatriculation, disponible
+TAILLE: id_taille, nom, coefficient_prix
+VENTE: id_vente, date_commande, date_livraison, duree_livraison, montant_initial, montant_final, gratuite_retard, gratuite_fidelite, statut
+
+COMPOSE: PIZZA (0,n), INGREDIENT (0,n)
+COMMANDE: CLIENT (1,1), VENTE (0,n)
+LIVRE: LIVREUR (1,1), VENTE (0,n)
+UTILISE: VEHICULE (1,1), VENTE (0,n)
+CONCERNE: PIZZA (1,1), VENTE (0,n)
+DIMENSIONNE: TAILLE (1,1), VENTE (0,n)
+
+Contraintes:
+- solde_compte >= 0
+- nb_pizzas_achetees >= 0
+- prix_base > 0
+- nb_commandes >= 0
+- stock >= 0
+- nb_utilisations >= 0
+- nombre_retards >= 0
+- immatriculation UNIQUE
+- coefficient_prix > 0
+- duree_livraison >= 0
+- montant_initial >= 0
+- montant_final >= 0
+- statut IN ('en_attente', 'refusee', 'en_cours', 'livree')
+- quantite > 0 (dans COMPOSE) 

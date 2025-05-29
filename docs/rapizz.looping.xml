@@ -1,0 +1,18 @@
+<?xml version="1.0" ?>
+<Model name="RaPizz" code="RAPIZZ" creator="Assistant Claude" modificationDate="2024-03-19" type="PhysicalDataModel">
+  <Entity name="CLIENT">
+    <Attribute name="id_client" type="INTEGER" constraints="PK"/>
+    <Attribute name="nom" type="VARCHAR(100)" constraints="NOT NULL"/>
+    <Attribute name="prenom" type="VARCHAR(100)" constraints="NOT NULL"/>
+    <Attribute name="adresse" type="TEXT" constraints="NOT NULL"/>
+    <Attribute name="telephone" type="VARCHAR(15)" constraints=""/>
+    <Attribute name="solde_compte" type="DECIMAL(10,2)" constraints="DEFAULT 0.00 CHECK (solde_compte &gt;= 0)"/>
+    <Attribute name="nb_pizzas_achetees" type="INTEGER" constraints="DEFAULT 0 CHECK (nb_pizzas_achetees &gt;= 0)"/>
+  </Entity>
+  <Entity name="PIZZA">
+    <Attribute name="id_pizza" type="INTEGER" constraints="PK"/>
+    <Attribute name="nom" type="VARCHAR(100)" constraints="NOT NULL"/>
+    <Attribute name="prix_base" type="DECIMAL(10,2)" constraints="NOT NULL CHECK (prix_base &gt; 0)"/>
+    <Attribute name="nb_commandes" type="INTEGER" constraints="DEFAULT 0 CHECK (nb_commandes &gt;= 0)"/>
+  </Entity>
+</Model>
