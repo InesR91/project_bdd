@@ -66,13 +66,6 @@ L'interface est organisée en onglets pour une navigation facile :
   - Marquez une livraison comme terminée
   - Signalez un retard
 
-### Onglet Statistiques
-- Visualisez en temps réel :
-  - Le chiffre d'affaires
-  - Le nombre de commandes du jour
-  - La pizza la plus vendue
-  - Le temps moyen de livraison
-
 ### Fonctionnalités générales
 - La barre de menu en haut permet d'accéder aux paramètres et à l'aide
 - Double-cliquez sur un élément pour voir ses détails

@@ -93,7 +93,6 @@ public class MainWindow extends JFrame {
         tabbedPane.addTab("Clients", createClientsPanel());
         tabbedPane.addTab("Pizzas", createPizzasPanel());
         tabbedPane.addTab("Livraisons", createLivraisonsPanel());
-        tabbedPane.addTab("Statistiques", createStatistiquesPanel());
 
         add(tabbedPane);
     }
@@ -940,42 +939,6 @@ public class MainWindow extends JFrame {
         }
     }
 
-    private JPanel createStatistiquesPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        
-        // Panneau des statistiques
-        JPanel statsPanel = new JPanel(new GridLayout(2, 2, 10, 10));
-        statsPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-        
-        // Cartes des statistiques
-        statsPanel.add(createStatCard("Chiffre d'affaires", "0 €"));
-        statsPanel.add(createStatCard("Commandes du jour", "0"));
-        statsPanel.add(createStatCard("Pizza la plus vendue", "-"));
-        statsPanel.add(createStatCard("Temps moyen de livraison", "0 min"));
-        
-        panel.add(statsPanel, BorderLayout.NORTH);
-        
-        return panel;
-    }
-
-    private JPanel createStatCard(String title, String value) {
-        JPanel card = new JPanel(new BorderLayout());
-        card.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(Color.GRAY),
-            BorderFactory.createEmptyBorder(10, 10, 10, 10)
-        ));
-        
-        JLabel titleLabel = new JLabel(title);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 14));
-        
-        JLabel valueLabel = new JLabel(value);
-        valueLabel.setFont(new Font("Arial", Font.PLAIN, 24));
-        
-        card.add(titleLabel, BorderLayout.NORTH);
-        card.add(valueLabel, BorderLayout.CENTER);
-        
-        return card;
-    }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {

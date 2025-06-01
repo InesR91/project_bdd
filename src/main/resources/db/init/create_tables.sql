@@ -37,8 +37,8 @@ CREATE TABLE IF NOT EXISTS Pizza (
 );
 
 CREATE TABLE IF NOT EXISTS Pizza_Ingredient (
-    id_pizza INTEGER REFERENCES Pizza(id_pizza),
-    id_ingredient INTEGER REFERENCES Ingredient(id_ingredient),
+    id_pizza INTEGER REFERENCES Pizza(id_pizza) ON DELETE CASCADE,
+    id_ingredient INTEGER REFERENCES Ingredient(id_ingredient) ON DELETE CASCADE,
     quantite DECIMAL(10,2) NOT NULL,
     PRIMARY KEY (id_pizza, id_ingredient)
 );
@@ -63,14 +63,19 @@ CREATE TABLE IF NOT EXISTS Livreur (
 
 CREATE TABLE IF NOT EXISTS Vente (
     id_vente SERIAL PRIMARY KEY,
-    id_client INTEGER REFERENCES Client(id_client),
-    id_pizza INTEGER REFERENCES Pizza(id_pizza),
-    id_taille INTEGER REFERENCES Taille(id_taille),
-    id_livreur INTEGER REFERENCES Livreur(id_livreur),
-    id_vehicule INTEGER REFERENCES Vehicule(id_vehicule),
+    id_client INTEGER NOT NULL REFERENCES Client(id_client) ON DELETE RESTRICT,
+    id_pizza INTEGER NOT NULL REFERENCES Pizza(id_pizza) ON DELETE RESTRICT,
+    id_taille INTEGER NOT NULL REFERENCES Taille(id_taille) ON DELETE RESTRICT,
+    id_livreur INTEGER REFERENCES Livreur(id_livreur) ON DELETE RESTRICT,
+    id_vehicule INTEGER REFERENCES Vehicule(id_vehicule) ON DELETE RESTRICT,
     date_commande TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_livraison TIMESTAMP,
     montant_initial DECIMAL(10,2) NOT NULL,
     montant_final DECIMAL(10,2) NOT NULL,
-    statut VARCHAR(20) DEFAULT 'en_attente'
+    statut VARCHAR(20) DEFAULT 'en_attente',
+    CONSTRAINT chk_statut CHECK (statut IN ('en_attente', 'en_cours', 'livre', 'annulee')),
+    CONSTRAINT chk_livreur_vehicule CHECK (
+        (id_livreur IS NULL AND id_vehicule IS NULL) OR
+        (id_livreur IS NOT NULL AND id_vehicule IS NOT NULL)
+    )
 ); 

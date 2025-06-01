@@ -2,12 +2,14 @@
 
 -- Supprimer tous les triggers existants
 DROP TRIGGER IF EXISTS trg_update_livreur_disponibilite ON Vente;
+DROP TRIGGER IF EXISTS trg_update_vehicule_disponibilite ON Vente;
 DROP TRIGGER IF EXISTS trg_update_ingredient_stock ON Vente;
 DROP TRIGGER IF EXISTS trg_update_client_statistiques ON Vente;
 DROP TRIGGER IF EXISTS trg_check_ingredients_disponibilite ON Vente;
 
 -- Supprimer toutes les fonctions existantes
 DROP FUNCTION IF EXISTS update_livreur_disponibilite() CASCADE;
+DROP FUNCTION IF EXISTS update_vehicule_disponibilite() CASCADE;
 DROP FUNCTION IF EXISTS update_ingredient_stock() CASCADE;
 DROP FUNCTION IF EXISTS update_client_statistiques() CASCADE;
 DROP FUNCTION IF EXISTS check_ingredients_disponibilite() CASCADE;
@@ -16,8 +18,8 @@ DROP FUNCTION IF EXISTS check_ingredients_disponibilite() CASCADE;
 CREATE OR REPLACE FUNCTION update_livreur_disponibilite()
 RETURNS TRIGGER AS $$
 BEGIN
-    -- Si une nouvelle commande est créée
-    IF (TG_OP = 'INSERT') THEN
+    -- Si une nouvelle commande est créée ou mise à jour avec un nouveau livreur
+    IF (TG_OP = 'INSERT' OR (TG_OP = 'UPDATE' AND NEW.id_livreur IS NOT NULL AND OLD.id_livreur IS NULL)) THEN
         -- Vérifier si le livreur est disponible
         IF NOT EXISTS (SELECT 1 FROM Livreur WHERE id_livreur = NEW.id_livreur AND disponible = TRUE) THEN
             RAISE EXCEPTION 'Le livreur n''est pas disponible';
@@ -26,21 +28,56 @@ BEGIN
         UPDATE Livreur SET disponible = FALSE 
         WHERE id_livreur = NEW.id_livreur;
     
-    -- Si une commande est terminée
-    ELSIF (TG_OP = 'UPDATE') THEN
-        -- Rendre le livreur disponible sans condition
+    -- Si une commande est terminée ou le livreur est changé
+    ELSIF (TG_OP = 'UPDATE' AND 
+           (NEW.statut = 'livré' OR NEW.id_livreur IS NULL) AND 
+           OLD.id_livreur IS NOT NULL) THEN
+        -- Rendre l'ancien livreur disponible
         UPDATE Livreur SET disponible = TRUE
-        WHERE id_livreur = NEW.id_livreur;
+        WHERE id_livreur = OLD.id_livreur;
     END IF;
     
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
+-- Trigger pour mettre à jour la disponibilité du véhicule
+CREATE OR REPLACE FUNCTION update_vehicule_disponibilite()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Si une nouvelle commande est créée ou mise à jour avec un nouveau véhicule
+    IF (TG_OP = 'INSERT' OR (TG_OP = 'UPDATE' AND NEW.id_vehicule IS NOT NULL AND OLD.id_vehicule IS NULL)) THEN
+        -- Vérifier si le véhicule est disponible
+        IF NOT EXISTS (SELECT 1 FROM Vehicule WHERE id_vehicule = NEW.id_vehicule AND disponible = TRUE) THEN
+            RAISE EXCEPTION 'Le véhicule n''est pas disponible';
+        END IF;
+        -- Marquer le véhicule comme non disponible
+        UPDATE Vehicule SET disponible = FALSE 
+        WHERE id_vehicule = NEW.id_vehicule;
+    
+    -- Si une commande est terminée ou le véhicule est changé
+    ELSIF (TG_OP = 'UPDATE' AND 
+           (NEW.statut = 'livré' OR NEW.id_vehicule IS NULL) AND 
+           OLD.id_vehicule IS NOT NULL) THEN
+        -- Rendre l'ancien véhicule disponible
+        UPDATE Vehicule SET disponible = TRUE
+        WHERE id_vehicule = OLD.id_vehicule;
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Créer les triggers
 CREATE TRIGGER trg_update_livreur_disponibilite
-AFTER INSERT OR UPDATE ON Vente
+BEFORE INSERT OR UPDATE ON Vente
 FOR EACH ROW
 EXECUTE FUNCTION update_livreur_disponibilite();
+
+CREATE TRIGGER trg_update_vehicule_disponibilite
+BEFORE INSERT OR UPDATE ON Vente
+FOR EACH ROW
+EXECUTE FUNCTION update_vehicule_disponibilite();
 
 -- Trigger pour mettre à jour les stocks d'ingrédients et leurs utilisations
 CREATE OR REPLACE FUNCTION update_ingredient_stock()

@@ -1,32 +1,16 @@
 package com.pizzeria.dao;
 
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class DatabaseConnection {
-    private static HikariDataSource dataSource;
-
-    static {
-        HikariConfig config = new HikariConfig();
-        config.setJdbcUrl("jdbc:postgresql://localhost:5432/pizzeria");
-        config.setUsername("postgres");
-        config.setPassword("postgres");
-        config.setMaximumPoolSize(10);
-        config.setMinimumIdle(5);
-        config.setIdleTimeout(300000); // 5 minutes
-        config.setMaxLifetime(1200000); // 20 minutes
-        config.setConnectionTimeout(5000); // 5 secondes
-        config.addDataSourceProperty("cachePrepStmts", "true");
-        config.addDataSourceProperty("prepStmtCacheSize", "250");
-        config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
-        
-        dataSource = new HikariDataSource(config);
-    }
+    private static final String URL = "jdbc:postgresql://localhost:5432/pizzeria";
+    private static final String USER = "postgres";
+    private static final String PASSWORD = "postgres";
 
     public static Connection getConnection() throws SQLException {
-        return dataSource.getConnection();
+        return DriverManager.getConnection(URL, USER, PASSWORD);
     }
 
     public static void closeConnection(Connection connection) {
@@ -36,12 +20,6 @@ public class DatabaseConnection {
             } catch (SQLException e) {
                 e.printStackTrace();
             }
-        }
-    }
-
-    public static void shutdown() {
-        if (dataSource != null) {
-            dataSource.close();
         }
     }
 } 
